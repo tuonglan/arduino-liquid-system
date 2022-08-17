@@ -319,24 +319,23 @@ typedef struct SystemController {
   
   uint8_t injector_count;                   // Number of injector
 
-  long injecting_starting_point_z;       // The height of the base at which the liquid should be injected into the tube first time.
-  long injecting_current_point_z;        // The height of the current base at which the liquid can be injected into the tube
+  long const c_injecting_starting_point_z;        // The height of the base at which the liquid should be injected into the tube first time.
+  long injecting_current_point_z;                 // The height of the current base at which the liquid can be injected into the tube
 
   // -----------------------------------------------
   // Constructors
-  SystemController() {
+  SystemController(long injecting_starting_point_z): c_injecting_starting_point_z(injecting_starting_point_z) {
     base = NULL;
     injectors = NULL;
 
     injector_count = 0;
+    injecting_current_point_z = c_injecting_starting_point_z;
   }
   ~SystemController() {
-    if (base != NULL)
-      delete base;
+//    if (base != NULL)
+//      delete base;
 
-    if (injectors != 0) {
-      for (int i=0;i<injector_count;++i)
-        delete injectors[i];
+    if (injectors != NULL) {
       delete[] injectors;
     }
   }
@@ -344,22 +343,28 @@ typedef struct SystemController {
 
   // -----------------------------------------------
   // Initializing function
-  void init_base(StepDisplacer const *x_dis, StepDisplacer const *y_dis, StepDisplacer const *z_dis, Vector const *vec=NULL) {
-    base = new BaseController(x_dis, y_dis, z_dis);
-    if (vec)
-      base->move_to(vec);
-  }
-  void init_injectors(StepPump const * const *pumps, Vector const * const *locations, int count) {
-    injector_count = count;
+//  void init_base(StepDisplacer const *x_dis, StepDisplacer const *y_dis, StepDisplacer const *z_dis, Vector const *vec=NULL) {
+//    base = new BaseController(x_dis, y_dis, z_dis);
+//    if (vec)
+//      base->move_to(vec);
+//  }
+//  void init_injectors(StepPump const * const *pumps, Vector const * const *locations, int count) {
+//    injector_count = count;
+//    injectors = new Injector*[count];
+//    for (int i=0;i<count;++i)
+//      injectors[i] = new Injector(pumps[i], locations[i]->x, locations[i]->y, locations[i]->z);
+//  }
+  void init_base(BaseController *p_base) { base = p_base; }
+  void init_injectors(Injector * const * const p_injectors, uint8_t count) {
+    if (injectors)
+      delete[] injectors;
     injectors = new Injector*[count];
-    for (int i=0;i<count;++i)
-      injectors[i] = new Injector(pumps[i], locations[i]->x, locations[i]->y, locations[i]->z);
+    for (uint8_t i=0;i<count;++i)
+      injectors[i] = p_injectors[i];
   }
 
   // Configure the whole system
-  void configure(long p_injecting_starting_point_z) {
-    injecting_starting_point_z = p_injecting_starting_point_z;
-    injecting_current_point_z = p_injecting_starting_point_z;
+  void configure() {
   }
   
 
@@ -370,7 +375,7 @@ typedef struct SystemController {
   void set_base_loc(Vector const &vec) { base->move(vec); }
   void reset() {
     base->reset();
-    injecting_current_point_z = injecting_starting_point_z;
+    injecting_current_point_z = c_injecting_starting_point_z;
   }
 
   // Inject an amount of liquid using the nth injector

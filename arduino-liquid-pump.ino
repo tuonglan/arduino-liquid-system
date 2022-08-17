@@ -1,67 +1,84 @@
 #include "arduino-step-motors.cpp"
+#include "arduino-system-configuration.cpp"
 
-int smDirectionPin = 2; //Direction pin
-int smStepPin = 3; //Stepper pin
 
-int smDirectionPin2 = 6;
-int smStepPin2 = 7;
+// -------------------------------------------------------------------
+// Initialization
 
-int smDirectionPin3 = 9;
-int smStepPin3 = 10;
+// Displacer & Base
+StepDisplacer displacer_x(DISPLACER_X_STEP_PIN, DISPLACER_X_DIRECTION_PIN);
+StepDisplacer displacer_y(DISPLACER_Y_STEP_PIN, DISPLACER_Y_DIRECTION_PIN);
+StepDisplacer displacer_z(DISPLACER_Z_STEP_PIN, DISPLACER_Z_DIRECTION_PIN);
 
+BaseController base_controller(&displacer_x, &displacer_y, &displacer_z);
+
+// Pumps & Injectors
+StepPump pump_1(INJECTOR_1_PUMP_STEP_PIN, INJECTOR_1_PUMP_DIRECTION_PIN);
+StepPump pump_2(INJECTOR_2_PUMP_STEP_PIN, INJECTOR_2_PUMP_DIRECTION_PIN);
+StepPump pump_3(INJECTOR_3_PUMP_STEP_PIN, INJECTOR_3_PUMP_DIRECTION_PIN);
+StepPump pump_4(INJECTOR_4_PUMP_STEP_PIN, INJECTOR_4_PUMP_DIRECTION_PIN);
+
+Injector injector_1(&pump_1, INJECTOR_1_LOCATION_X, INJECTOR_1_LOCATION_Y, INJECTOR_1_LOCATION_Z);
+Injector injector_2(&pump_2, INJECTOR_2_LOCATION_X, INJECTOR_2_LOCATION_Y, INJECTOR_2_LOCATION_Z);
+Injector injector_3(&pump_3, INJECTOR_3_LOCATION_X, INJECTOR_3_LOCATION_Y, INJECTOR_3_LOCATION_Z);
+Injector injector_4(&pump_4, INJECTOR_4_LOCATION_X, INJECTOR_4_LOCATION_Y, INJECTOR_4_LOCATION_Z);
+
+// System Controller
+SystemController system_controller(INJECTING_STARTING_POINT_Z);
+
+
+// -------------------------------------------------------------------
+// Setup functions
+void config_pins() {
+  pinMode(DISPLACER_X_DIRECTION_PIN, OUTPUT);
+  pinMode(DISPLACER_Y_DIRECTION_PIN, OUTPUT);
+  pinMode(DISPLACER_Z_DIRECTION_PIN, OUTPUT);
+
+  pinMode(DISPLACER_X_STEP_PIN, OUTPUT);
+  pinMode(DISPLACER_Y_STEP_PIN, OUTPUT);
+  pinMode(DISPLACER_Z_STEP_PIN, OUTPUT);
+
+  pinMode(INJECTOR_1_PUMP_DIRECTION_PIN, OUTPUT);
+  pinMode(INJECTOR_2_PUMP_DIRECTION_PIN, OUTPUT);
+  pinMode(INJECTOR_3_PUMP_DIRECTION_PIN, OUTPUT);
+  pinMode(INJECTOR_4_PUMP_DIRECTION_PIN, OUTPUT);
+
+  pinMode(INJECTOR_1_PUMP_STEP_PIN, OUTPUT);
+  pinMode(INJECTOR_2_PUMP_STEP_PIN, OUTPUT);
+  pinMode(INJECTOR_3_PUMP_STEP_PIN, OUTPUT);
+  pinMode(INJECTOR_4_PUMP_STEP_PIN, OUTPUT);
+}
+
+void config_system() {
+  Injector *injectors[4] = { &injector_1, &injector_2, &injector_3, &injector_4 };
+
+  system_controller.init_base(&base_controller);
+  system_controller.init_injectors(injectors, 4);
+}
+
+// -------------------------------------------------------------------
+// Setup
 void setup() {
-  // put your setup code here, to run once:
-  /*Sets all pin to output; the microcontroller will send them(the pins) bits, it will not expect to receive any bits from thiese pins.*/
-  pinMode(smDirectionPin, OUTPUT);
-  pinMode(smStepPin, OUTPUT);
-  pinMode(smDirectionPin2, OUTPUT);
-  pinMode(smStepPin2, OUTPUT);
-  pinMode(smDirectionPin3, OUTPUT);
-  pinMode(smStepPin3, OUTPUT);
+  config_pins();
+  config_system();
 
   Serial.begin(9600);
 }
 
-// Configure the motors
-StepMotor motor1(smStepPin, smDirectionPin);
-StepDisplacer displacer1(smStepPin, smDirectionPin);
-StepDisplacer displacer2(smStepPin2, smDirectionPin2);
-StepDisplacer displacer3(smStepPin3, smDirectionPin3);
-StepPump pump1(smStepPin, smDirectionPin);
-StepPump pump2(smStepPin2, smDirectionPin2);
 
-
-void loop() {
-//  // put your main code here, to run repeatedly:
-//  digitalWrite(smDirectionPin, HIGH); //Writes the direction to the EasyDriver DIR pin. (HIGH is clockwise).
-//  digitalWrite(smDirectionPin2, HIGH);
-//  /*Slowly turns the motor 1600 steps*/
-//  for (int i = 0; i < 1600; i++){
-//    digitalWrite(smStepPin, HIGH);
-//    digitalWrite(smStepPin2, HIGH);
-//    delayMicroseconds(700);
-//    digitalWrite(smStepPin, LOW);
-//    digitalWrite(smStepPin2, LOW);
-//    delayMicroseconds(700);
-//  }
-//
-//  delay(1000); //Pauses for a second (the motor does not need to pause between switching direction, so you can safely remove this)
-//
-//  digitalWrite(smDirectionPin, LOW); //Writes the direction to the EasyDriver DIR pin. (LOW is counter clockwise)
-//  digitalWrite(smDirectionPin2, LOW);
-//  /*Turns the motor fast 1600 steps*/
-//  for (int i = 0; i < 1600; i++){
-//    digitalWrite(smStepPin, HIGH);
-//    digitalWrite(smStepPin2, HIGH);
-//    delayMicroseconds(150);
-//    digitalWrite(smStepPin, LOW);
-//    digitalWrite(smStepPin2, LOW);
-//    delayMicroseconds(150);
-//  }
-  PumpingController controller(&displacer1, &pump2);
+// -------------------------------------------------------------------
+// Test function
+void test_1() {
+  PumpingController controller(&displacer_x, &pump_1);
   controller.pump(1000, 50000);
 
   delay(1000);
+}
+
+// -------------------------------------------------------------------
+// Run
+void loop() {
+  test_1();
 
   Serial.println("Hello Wordl");
 }
