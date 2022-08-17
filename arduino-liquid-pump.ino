@@ -1,5 +1,6 @@
 #include "arduino-step-motors.cpp"
 #include "arduino-system-configuration.cpp"
+#include "arduino-utils.hh"
 
 
 // -------------------------------------------------------------------
@@ -72,13 +73,97 @@ void test_1() {
   PumpingController controller(&displacer_x, &pump_1);
   controller.pump(1000, 50000);
 
-  delay(1000);
+  delay(300);
 }
 
 // -------------------------------------------------------------------
 // Run
-void loop() {
-  test_1();
+void execute() {
+  static char input_str[256];
+  static uint8_t indices[INJECTOR_COUNT] = {1, 2, 3, 4};
+  static long volumes[INJECTOR_COUNT] = {0, 0, 0, 0};
 
-  Serial.println("Hello Wordl");
+  static bool volume_prompt = true;
+  static bool index_prompt = false;
+
+  static bool volume_input = false;
+  static bool index_input = false;
+  static bool continue_input = false;
+
+  static bool execute_flag = false;
+
+  // Ask for input
+  if (volume_prompt) {
+    volume_prompt = false;
+    Serial.println("Please enter list of volumes to be injected. Ex: \"1000 2000 3000 4000\"");
+    volume_input = true;
+  }
+  if (index_prompt) {
+    index_prompt = false;
+    Serial.println("Please enter order of injectors. Ex: \"0 1 2 3\"");
+    index_input = true;
+  }
+
+  // Get input values for volumes
+  if (volume_input) {
+    int size = read_from_console(input_str, 255);
+    if (size > 0) {
+      string_to_numbers(input_str, 255, volumes, INJECTOR_COUNT);
+      volume_input = false;
+      index_prompt = true;
+    }
+  }
+  if (index_input) {
+    int size = read_from_console(input_str, 255);
+    if (size > 0) {
+      long temp[INJECTOR_COUNT];                                      // I don't know why type casting (long -> uint8_t) doesn't work on uno
+      string_to_numbers(input_str, 255, temp, INJECTOR_COUNT);
+      for (int i=0;i<INJECTOR_COUNT;++i)
+        indices[i] = temp[i];
+      index_input = false;
+      execute_flag = true;
+    }
+  }
+  if (continue_input) {
+    int size = read_from_console(input_str, 255);
+    if (size > 0) {
+      if (input_str[0] == 'c') {
+        continue_input = false;
+        execute_flag = true;
+      }
+      else if (input_str[0] == 'n') {
+        continue_input = false;
+        volume_prompt = true;
+      }
+    }
+  }
+
+  // Run when input are full
+  if (execute_flag) {
+    Serial.println("System will start running with the following inputs of volumes & injector's order: ");
+    Serial.print("(Volume,Index: ");
+    for (int i=0;i<INJECTOR_COUNT;++i) {
+      Serial.print(volumes[i]);
+      Serial.print(",");
+      Serial.print(indices[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+
+    // Actual execution
+    system_controller.inject(volumes, indices, INJECTOR_COUNT);
+    //delay(1000);
+
+    Serial.println("Execution done, please enter 'c' for continue with previous values, 'n' for entering new value");
+    execute_flag = false;
+    continue_input = true;
+  }
 }
+
+void loop() {
+//  test_1();
+
+  execute();
+}
+
+

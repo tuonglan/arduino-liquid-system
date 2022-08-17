@@ -39,3 +39,7 @@ int string_to_numbers(char const * const str, uint8_t str_max_size, long * const
 
   return found_size;
 }
+
+//int string_to_numbers(char const * const str, uint8_t str_max_size, uint8_t * const numbers, uint8_t num_size) {
+//  return string_to_numbers(str, str_max_size, (long * const)numbers, num_size);
+//}

@@ -36,3 +36,4 @@
 
 // Other configuration
 #define INJECTING_STARTING_POINT_Z 100000     // Micrometres
+#define INJECTOR_COUNT 4
