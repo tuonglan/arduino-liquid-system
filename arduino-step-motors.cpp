@@ -402,7 +402,7 @@ typedef struct SystemController {
   }
 
   // Inject a list of (liquid, injector_index)
-  void inject(long const *volumes, long const *indices, uint8_t count) {
+  void inject(long const *volumes, uint8_t const *indices, uint8_t count) {
     for (int i=0;i<count;++i)
       this->inject(volumes[i], indices[i]);
   }
